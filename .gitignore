@@ -7,3 +7,7 @@ node_modules/
 
 # Bundled plugins
 /dist/
+
+# Sublime Text
+**/*.sublime-project
+**/*.sublime-workspace

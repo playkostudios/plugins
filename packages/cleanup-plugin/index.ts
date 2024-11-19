@@ -1,5 +1,10 @@
-import {EditorPlugin, project, ui, data} from '@wonderlandengine/editor-api';
+import {EditorPlugin, project, ui, data, Access} from '@wonderlandengine/editor-api';
 import {existsSync} from 'node:fs';
+
+const EPSILON = 1e-6;
+const VEC3_ZERO = [0, 0, 0] as const;
+const VEC3_ONE = [1, 1, 1] as const;
+const QUAT_IDENTITY = [0, 0, 0, 1] as const;
 
 /**
  * Plugin to cleanup resources with broken links.
@@ -83,5 +88,85 @@ export default class CleanupPlugin extends EditorPlugin {
         }
 
         this.collectResources();
+    }
+
+    private equalsEps(a: number, b: number) {
+        return Math.abs(a - b) < EPSILON;
+    }
+
+    private roundNumber(val: number) {
+        if (this.equalsEps(val, 0)) return 0;
+
+        const wantsNegative = val < 0;
+        const positiveVal = Math.abs(val);
+        const nearestPower = 2 ** Math.round(Math.log2(positiveVal));
+
+        if (this.equalsEps(positiveVal, nearestPower)) {
+            return wantsNegative ? -nearestPower : nearestPower;
+        } else {
+            return val;
+        }
+    }
+
+    private simplifyVector(access: Access, key: string, defaultVal: ReadonlyArray<number>, allowDelete: boolean) {
+        if (!access.exists(key)) return;
+
+        let isDefault = true;
+        let changed = false;
+        const val = [...access[key]];
+        for (let i = defaultVal.length - 1; i >= 0; i--) {
+            const newVal = this.roundNumber(val[i]);
+            if (newVal !== val[i]) {
+                val[i] = newVal;
+                changed = true;
+            }
+
+            if (!this.equalsEps(defaultVal[i], val[i])) isDefault = false;
+        }
+
+        if (allowDelete && isDefault) {
+            delete access[key];
+        } else if (changed) {
+            access[key] = val;
+        }
+    }
+
+    private simplifyFlag(access: Access, key: string, defaultVal: boolean) {
+        if (access.exists(key) && access[key] === defaultVal) delete access[key];
+    }
+
+    preProjectSave(): boolean {
+        for (const object of Object.values(data.objects)) {
+            const isLinked = object.link !== null;
+
+            // linked objects have different defaults, so they shouldn't be
+            // deleted, only rounded
+            this.simplifyVector(object, 'translation', VEC3_ZERO, !isLinked);
+            this.simplifyVector(object, 'scaling', VEC3_ONE, !isLinked);
+            this.simplifyVector(object, 'rotation', QUAT_IDENTITY, !isLinked);
+
+            if (!object.exists('components')) continue;
+
+            for (let c = object.components.length; c >= 0; c--) {
+                const component = object.components[c];
+                if (!component) {
+                    if (!isLinked) object.components.splice(c, 1);
+                    continue;
+                }
+
+                this.simplifyFlag(component, 'active', true);
+                if (isLinked) continue;
+
+                // TODO simplify component properties in object when component
+                //      class metadata is available in the editor api
+                // TODO remove invalid components
+            }
+
+            if (!isLinked && object.components.length === 0) {
+                delete object.components;
+                continue;
+            }
+        }
+        return true;
     }
 }
