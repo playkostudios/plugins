@@ -1,5 +1,5 @@
 {
-    "name": "@wonderlandengine/cleanup-plugin",
+    "name": "@playkostudios/cleanup-plugin",
     "version": "0.0.1",
     "description": "Wonderland Editor plugin to cleanup resources in Wonderland Engine projects.",
     "main": "index.mjs",
@@ -10,16 +10,17 @@
         "wonderland-engine"
     ],
     "scripts": {
-        "build": "esbuild index.ts --bundle --minify --platform=node --format=esm --target=es2022 --outfile=../../dist/cleanup-plugin.mjs",
+        "build": "esbuild index.ts --bundle --minify --platform=node --format=esm --target=es2022 --outfile=../playkostudios-cleanup-plugin.mjs",
         "tsc": "tsc --noEmit"
     },
     "prettier": "@wonderlandengine/prettier-config",
     "dependencies": {
-        "@wonderlandcloud/cli": "^0.1.4",
-        "@wonderlandengine/editor-api": "^1.2.4"
+        "@types/node": "^22.15.18",
+        "@wonderlandcloud/cli": "^0.2.22",
+        "@wonderlandengine/editor-api": "^1.4.0"
     },
     "devDependencies": {
         "@wonderlandengine/prettier-config": "^1.0.0",
-        "typescript": "^5.6.3"
+        "typescript": "^5.8.3"
     }
 }
