@@ -1,6 +1,6 @@
 {
     "name": "@playkostudios/cleanup-plugin",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "Wonderland Editor plugin to cleanup resources in Wonderland Engine projects.",
     "main": "index.mjs",
     "typings": "index.d.ts",
